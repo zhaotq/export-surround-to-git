@@ -210,7 +210,7 @@ def find_all_file_versions(mainline, branch, path):
     comment = None
     bFoundOne = False
     for line in lines:
-        #sys.stderr.write("\n=== Trying line = " + line)
+        sys.stderr.write("\n=== Trying line = " + line)
 
         result = histRegex.search(line)
         if result:
@@ -305,6 +305,7 @@ def create_database():
     # database file is created in cwd
     name = datetime.datetime.fromtimestamp(time.time()).strftime('%Y%m%d%H%M%S') + '.db'
     database = sqlite3.connect(name)
+    database.text_factory = str
     c = database.cursor()
     # we intentionally avoid duplicates via the PRIMARY KEY
     c.execute('''CREATE TABLE operations (timestamp INTEGER NOT NULL, action INTEGER NOT NULL, mainline TEXT NOT NULL, branch TEXT NOT NULL, path TEXT, origPath TEXT, version INTEGER, author TEXT, comment TEXT, data TEXT, PRIMARY KEY(action, mainline, branch, path, origPath, version, author, data))''')
