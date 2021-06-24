@@ -347,25 +347,30 @@ def cmd_parse(mainline, path, database):
             #sys.stderr.write("\n[*] \t\tversions = %s" % versions)
 
             for timestamp, action, origPath, version, author, comment, data in versions:
-                epoch = int(time.mktime(time.strptime(timestamp, "%m/%d/%Y %I:%M %p")))
-                # branch operations don't follow the actionMap
-                if action == "add to branch":
-                    if is_snapshot_branch(data, pathWalk):
-                        branchAction = Actions.BRANCH_SNAPSHOT
+                try:
+                    epoch = int(time.mktime(time.strptime(timestamp, "%m/%d/%Y %I:%M %p")))
+                    # branch operations don't follow the actionMap
+                    if action == "add to branch":
+                        if is_snapshot_branch(data, pathWalk):
+                            branchAction = Actions.BRANCH_SNAPSHOT
+                        else:
+                            branchAction = Actions.BRANCH_BASELINE
+                        add_record_to_database(DatabaseRecord((epoch, branchAction, mainline, branch, path, None, version, author, comment, data)), database)
                     else:
-                        branchAction = Actions.BRANCH_BASELINE
-                    add_record_to_database(DatabaseRecord((epoch, branchAction, mainline, branch, path, None, version, author, comment, data)), database)
-                else:
-                    if origPath:
-                        if action == "renamed":
-                            origFullPath = os.path.join(pathWalk, origPath)
-                            data = os.path.join(pathWalk, data)
-                        elif action == "moved":
-                            origFullPath = os.path.join(origPath, fileWalk)
-                            data = os.path.join(data, fileWalk)
-                    else:
-                        origFullPath = None
-                    add_record_to_database(DatabaseRecord((epoch, actionMap[action], mainline, branch, fullPathWalk, origFullPath, version, author, comment, data)), database)
+                        if origPath:
+                            if action == "renamed":
+                                origFullPath = os.path.join(pathWalk, origPath)
+                                data = os.path.join(pathWalk, data)
+                            elif action == "moved":
+                                origFullPath = os.path.join(origPath, fileWalk)
+                                data = os.path.join(data, fileWalk)
+                        else:
+                            origFullPath = None
+                        add_record_to_database(DatabaseRecord((epoch, actionMap[action], mainline, branch, fullPathWalk, origFullPath, version, author, comment, data)), database)
+                except Exception as e:
+                    # print error and continue
+                    sys.stderr.write("\n[*] \tError when parsing file '%s' ..." % fullPathWalk)
+                    sys.stderr.write("\n[*] \t%s" % e)
 
     sys.stderr.write("\n[+] Parse phase complete")
 
